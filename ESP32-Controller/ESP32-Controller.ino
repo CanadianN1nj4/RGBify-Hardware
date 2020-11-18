@@ -1,89 +1,50 @@
-#include "WiFi.h"
-#include "aREST.h"
+#include <BluetoothSerial.h>
+BluetoothSerial Bluetooth;
 
-// ---- Variables for Rest API Start ----
-aREST rest = aREST(); 
-WiFiServer server(80); 
-
-const char* ssid = "";   // Put in your Wifi Network Name
-const char* password =  "";  // Put in your WiFi Password
-
-String name = "RGBify";
-// ---- Variables for Rest API END ----
-
-
-void restApiSetup() {
-  rest.function("setLedState", setLedState);
-  rest.function("toggleLedState", toggleLedState);
-  
-  //For Demo
-  rest.variable("name",&name);
- 
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
- 
-  Serial.println("WiFi connected with IP: ");
-  Serial.println(WiFi.localIP());
- 
-  server.begin();
-  
-}
+char input; // to store input character received via BT.
+String data;
 
 void setup() {
-  Serial.begin(115200);
-  restApiSetup();
+  //Serial.begin(9600);
+  Bluetooth.begin("ESP32"); //Bluetooth device name
 }
 
-void restApiLoop() {
-  WiFiClient client = server.available();
-  if (client) {
- 
-    while(!client.available()){
-      delay(5);
-    }
-    rest.handle(client);
+
+void printString(String s) {
+  for(char& c : s) {
+    Bluetooth.print(c);
   }
-}
- 
-void loop() {
-  restApiLoop();
-
+  Bluetooth.println("");
 }
 
-// RestAPI Recieves String containing int ledNum and String state
-int setLedState(String command) {
-    int divLoc = command.indexOf(",");
-
-    int stripNum = (command.substring(0,(divLoc))).toInt();
-    String state = command.substring(divLoc + 1, command.length());
-
-    // TODO: Do something with new information
-
-    //Demo Purposes
-    Serial.println(command);
-    Serial.println(stripNum);
-    Serial.println(state);
-
-}
-
-//RestAPI Takes in LED strip to inverse status of (on / off)
-int toggleLedState(String command) {
-  int stripNum;
-  
-  try {
-    stripNum = command.toInt();
-  } 
-  catch (int e) {
-    int divLoc = command.indexOf(","); 
-    stripNum = (command.substring(0,(divLoc))).toInt();
+void handleCommand(String s) {
+  if(s == "LightsON"){
+    // Turn Lights on
+    printString(s);
   }
+  else if(s == "LightsOFF"){
+    //Turn Lights off
+    printString(s);
+  }
+  else{
+    Bluetooth.println("invalid command");
+  }
+  data = "";
+  Bluetooth.flush();
 
-  // TODO: Do something with new information
+}
 
-  //Demo Purposes
-  Serial.println(stripNum);
+void loop() { 
 
+  if (Bluetooth.available())
+  {
+    input=(Bluetooth.read());
+
+      if (input != '!') {
+        data += input;
+      }
+      else {
+        handleCommand(data);        
+      }
+  }
 }
