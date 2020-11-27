@@ -2,11 +2,14 @@
 BluetoothSerial Bluetooth;
 
 char input; // to store input character received via BT.
-String data;
+String BTData;
+const int relay = 16;
 
 void setup() {
-  //Serial.begin(9600);
-  Bluetooth.begin("ESP32"); //Bluetooth device name
+  Serial.begin(9600);
+  Bluetooth.begin("RGBify"); //Bluetooth device name
+  pinMode(relay, OUTPUT);
+  digitalWrite(relay, HIGH);
 }
 
 
@@ -20,16 +23,20 @@ void printString(String s) {
 void handleCommand(String s) {
   if(s == "LightsON"){
     // Turn Lights on
-    printString(s);
+    digitalWrite(relay, LOW);
+    Serial.println("on");
+    printString("Lights On");
   }
   else if(s == "LightsOFF"){
     //Turn Lights off
-    printString(s);
+    digitalWrite(relay, HIGH);
+    Serial.println("off");
+    printString("Lights Off");
   }
   else{
     Bluetooth.println("invalid command");
   }
-  data = "";
+  BTData = "";
   Bluetooth.flush();
 
 }
@@ -41,10 +48,10 @@ void loop() {
     input=(Bluetooth.read());
 
       if (input != '!') {
-        data += input;
+        BTData += input;
       }
       else {
-        handleCommand(data);        
+        handleCommand(BTData);        
       }
   }
 }
