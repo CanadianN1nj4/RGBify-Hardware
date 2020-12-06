@@ -76,6 +76,7 @@ void handleCommand(String s) {
   else if(s.charAt(0) == '*'){
     Serial.println("changing strip");
     changeStrip(s);
+    Serial.println("8");
   }
   else if(s.charAt(0) == '.'){
     
@@ -197,9 +198,10 @@ void changeStrip(String s){
     }
     Serial.println("6");
   }
+  Serial.println("7");
 }
 
-void wholeStrip(LinkedList<String> variables, int stripNum){
+void wholeStrip(LinkedList<String> &variables, int stripNum){
   //returns if there isn't enough variables for the colour
   Serial.println("whole strip variables length: " + String(variables.size()));
   if(variables.size() < 3) return;
@@ -222,7 +224,7 @@ void wholeStrip(LinkedList<String> variables, int stripNum){
   Serial.println("4");
 }
 
-void animationSetup(LinkedList<String> variables, int stripNum){
+void animationSetup(LinkedList<String> &variables, int stripNum){
 
   //if it doesn't have enough variables
   if(variables.size() < 1) return;
@@ -246,7 +248,7 @@ void animationSetup(LinkedList<String> variables, int stripNum){
   currentAnimatedStrip = stripNum;
 }
 
-void addressableLEDs(LinkedList<String> variables, int stripNum){
+void addressableLEDs(LinkedList<String> &variables, int stripNum){
   return; 
 }
 
