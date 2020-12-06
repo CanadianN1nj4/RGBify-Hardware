@@ -18,8 +18,12 @@ String BTData;
 const int relay = 16;
 
 //RGB
-Adafruit_NeoPixel Strips[MAX_STRIPS];
 int StripPins[] = {25,26,27};
+Adafruit_NeoPixel Strips[MAX_STRIPS] = {
+  Adafruit_NeoPixel(60, StripPins[0], NEO_GRB + NEO_KHZ800),
+  Adafruit_NeoPixel(60, StripPins[1], NEO_GRB + NEO_KHZ800),
+  Adafruit_NeoPixel(60, StripPins[2], NEO_GRB + NEO_KHZ800),
+};
 
 //Animation variables
 int animation = 0;
@@ -78,9 +82,6 @@ void handleCommand(String s) {
   }
   else{
     Bluetooth.println("invalid command");
-    Serial.println(s);
-    LinkedList<String> variables;
-    parseInput(s, variables);
   }
   BTData = "";
   Bluetooth.flush();
@@ -135,7 +136,7 @@ void addStrip(String s){
 
 void add_ARGB_Strip(int numLEDs, int stripNum){
   int indexedStripNumber = stripNum-1;
-  Strips[indexedStripNumber] = Adafruit_NeoPixel(numLEDs, StripPins[indexedStripNumber], NEO_GRB + NEO_KHZ800);
+  Strips[indexedStripNumber].updateLength(numLEDs);
 //  Serial.print("Added " + String(numLEDs));
 //  Serial.println(" to strip number: " + String(stripNum));
 }
@@ -150,7 +151,9 @@ void removeStrip(String s){
 }
 
 void remove_ARGB_Strip(int stripNum){
-  Strips[stripNum-1].clear();
+  Adafruit_NeoPixel strip = Strips[stripNum-1];
+  strip.clear();
+  strip.show();
   if(stripNum == currentAnimatedStrip) currentAnimatedStrip = 0;
 }
 
@@ -178,6 +181,7 @@ void changeStrip(String s){
       case 1:
         Serial.println("whole strip");
         wholeStrip(variables, stripNum);
+        Serial.println("5");
         break;
       case 2:
         Serial.println("animation");
@@ -191,6 +195,7 @@ void changeStrip(String s){
         Serial.println("default option");
         return;
     }
+    Serial.println("6");
   }
 }
 
@@ -206,13 +211,15 @@ void wholeStrip(LinkedList<String> variables, int stripNum){
   Serial.println("Green: " + String(green));
   int blue  = checkColour(variables.shift().toInt());
   Serial.println("Blue: " + String(blue));
-  
+  Serial.println("1");
   //gets the colour in the form the strip can read
   uint32_t colour = Strips[stripNum-1].Color(red,green,blue);
-  
+  Serial.println("2");
   //sets the colour on the strip
   Strips[stripNum-1].fill(colour);
+  Serial.println("3");
   Strips[stripNum-1].show();
+  Serial.println("4");
 }
 
 void animationSetup(LinkedList<String> variables, int stripNum){
@@ -281,7 +288,6 @@ void parseInput(String s, LinkedList<String> &variables){
   int sizeOfString = s.length() + 1;
   char str[sizeOfString];
   s.toCharArray(str, sizeOfString);
-  Serial.println(str);
   char * tokens[50];
   size_t n = 0;
   char * vout;
@@ -295,13 +301,11 @@ void parseInput(String s, LinkedList<String> &variables){
 //      }
       //adds the token to the list
       tokens[n++] = p;
-      Serial.println(p);
   }
 
   //adds to the variable linked list
   for (size_t i = 0; i != n; ++i) {
     variables.add(String(tokens[i]));
-    Serial.println(String(tokens[i]));
   }
 }
 
@@ -392,8 +396,8 @@ void rain(){
   strip.show();
 }
 
+//TODO: Add colourWipe
+
 int brightnessWeighted(int c, int brightness){
   return (brightness*c/255);
 }
-
-//TODO: Add colourWipe
