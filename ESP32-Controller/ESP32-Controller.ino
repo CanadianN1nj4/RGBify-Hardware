@@ -67,7 +67,7 @@ void handleCommand(String s) {
     removeStrip(s);
   }
   else if(s.charAt(0) == '*'){
-    
+    changeStrip(s);
   }
   else if(s.charAt(0) == '.'){
     
@@ -147,7 +147,7 @@ void remove_ARGB_Strip(int stripNum){
   if(stripNum == currentAnimatedStrip) currentAnimatedStrip = 0;
 }
 
-void change_strip(String s){
+void changeStrip(String s){
   LinkedList<String> variables;
   parseInput(s, variables);
   /*
