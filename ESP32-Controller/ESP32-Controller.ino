@@ -70,6 +70,7 @@ void handleCommand(String s) {
     removeStrip(s);
   }
   else if(s.charAt(0) == '*'){
+    Serial.println("changing strip");
     changeStrip(s);
   }
   else if(s.charAt(0) == '.'){
@@ -77,6 +78,9 @@ void handleCommand(String s) {
   }
   else{
     Bluetooth.println("invalid command");
+    Serial.println(s);
+    LinkedList<String> variables;
+    parseInput(s, variables);
   }
   BTData = "";
   Bluetooth.flush();
@@ -153,6 +157,7 @@ void remove_ARGB_Strip(int stripNum){
 void changeStrip(String s){
   LinkedList<String> variables;
   parseInput(s, variables);
+  Serial.println("variables length: " + String(variables.size()));
   /*
    * variables:
    *  which change option*:
@@ -166,18 +171,24 @@ void changeStrip(String s){
     //shift removes from the front
     int optionNum = variables.shift().toInt();
     int stripNum = variables.shift().toInt();
+    Serial.println("option number: " + String(optionNum));
+    Serial.println("strip number: " + String(stripNum));
     if(!checkOptionNum(optionNum) || !checkStripNum(stripNum)) return;
     switch(optionNum){
       case 1:
+        Serial.println("whole strip");
         wholeStrip(variables, stripNum);
         break;
       case 2:
+        Serial.println("animation");
         animationSetup(variables, stripNum);
         break;
       case 3:
+        Serial.println("addressable");
         addressableLEDs(variables, stripNum);
         break;
       default:
+        Serial.println("default option");
         return;
     }
   }
@@ -185,12 +196,16 @@ void changeStrip(String s){
 
 void wholeStrip(LinkedList<String> variables, int stripNum){
   //returns if there isn't enough variables for the colour
+  Serial.println("whole strip variables length: " + String(variables.size()));
   if(variables.size() < 3) return;
   
   //sets the colurs
   int red   = checkColour(variables.shift().toInt());
+  Serial.println("Red: " + String(red));
   int green = checkColour(variables.shift().toInt());
+  Serial.println("Green: " + String(green));
   int blue  = checkColour(variables.shift().toInt());
+  Serial.println("Blue: " + String(blue));
   
   //gets the colour in the form the strip can read
   uint32_t colour = Strips[stripNum-1].Color(red,green,blue);
@@ -263,11 +278,13 @@ bool checkAnimationNum(int animationNum){
 }
 
 void parseInput(String s, LinkedList<String> &variables){
-  int sizeOfString = (sizeof(s) / sizeof(s[0]));
+  int sizeOfString = s.length() + 1;
   char str[sizeOfString];
   s.toCharArray(str, sizeOfString);
+  Serial.println(str);
   char * tokens[50];
   size_t n = 0;
+  char * vout;
 
   for (char * p = strtok(str, "*+,!/"); p; p = strtok(NULL, "*+,!/"))
   {
@@ -278,11 +295,13 @@ void parseInput(String s, LinkedList<String> &variables){
 //      }
       //adds the token to the list
       tokens[n++] = p;
+      Serial.println(p);
   }
 
   //adds to the variable linked list
   for (size_t i = 0; i != n; ++i) {
     variables.add(String(tokens[i]));
+    Serial.println(String(tokens[i]));
   }
 }
 
