@@ -25,6 +25,7 @@ int StripPins[] = {25,26,27};
 int animation = 0;
 int currentStep = 0;
 int currentAnimatedStrip = 0;
+bool forward = true;
 RGBColour animationColour;
 
 void setup() {
@@ -96,7 +97,7 @@ void loop() {
   }
 
   if(animation != 0){
-    testAnimation();
+    runAnimations();
   }
   
 }
@@ -194,6 +195,7 @@ void wholeStrip(LinkedList<String> variables, int stripNum){
   
   //sets the colour on the strip
   Strips[stripNum-1].fill(colour);
+  Strips[stripNum-1].show();
 }
 
 void animationSetup(LinkedList<String> variables, int stripNum){
@@ -282,23 +284,81 @@ void parseInput(String s, LinkedList<String> &variables){
   }
 }
 
-void testAnimation(){
-//  switch(animation){
-//    case 0:
-//      return;
-//    case 1:
-//      // everything is one colour and everything transitions together
-//      rainbow();
-//      break;
-//    case 2:
-//      breathing();
-//      break;
-//    case 3:
-//      // random leds turn a random colour
-//      rain();
-//      break;
-//    default:
-//      return;
-//    }
-//  }
+void runAnimations(){
+  switch(animation){
+    case 0:
+      return;
+    case 1:
+      // everything is one colour and everything transitions together
+      rainbow();
+      break;
+    case 2:
+      //Has a set colour that it dims and brightens
+      breathing();
+      break;
+    case 3:
+      // random leds turn a random colour
+      rain();
+      break;
+    default:
+      return;
+  }
 }
+
+void rainbow(){
+  
+  //get the current strip
+  Adafruit_NeoPixel strip = Strips[currentAnimatedStrip-1];
+
+  //uses gamma correction and gets the right colour
+  uint32_t rgbcolor = strip.gamma32(strip.ColorHSV(currentStep));
+
+  //fills the strip with the colour and shows
+  strip.fill(rgbcolor);
+  strip.show();
+  
+  //check if the if the current step is the max
+  if(currentStep == 65536){
+    currentStep == 0;
+  }else{
+    currentStep += 256;
+  }
+}
+
+void breathing(){
+  if(currentStep == 255 || currentStep == 0){
+    forward = !forward;
+  }
+  
+  //sets the pixel strip
+  Adafruit_NeoPixel strip = Strips[currentAnimatedStrip-1];
+
+  //gets the weighted colours
+  int rAdjusted = brightnessWeighted(animationColour.R, currentStep);
+  int gAdjusted = brightnessWeighted(animationColour.G, currentStep);
+  int bAdjusted = brightnessWeighted(animationColour.B, currentStep);
+
+  //gets the weighted strip colour
+  uint32_t colour = strip.Color(rAdjusted, gAdjusted, bAdjusted);
+
+  //fills the strip with the colour and shows
+  strip.fill(colour);
+  strip.show();
+
+  //checks to see what to do next
+  if(forward){
+    currentStep++;
+  }else{
+    currentStep--;
+  }
+}
+
+void rain(){
+  
+}
+
+int brightnessWeighted(int c, int brightness){
+  return (brightness*c/255);
+}
+
+//TODO: Add colourWipe
