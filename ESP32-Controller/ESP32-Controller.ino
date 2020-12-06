@@ -25,6 +25,8 @@ int StripPins[] = {25,26,27};
 int animation = 0;
 int currentStep = 0;
 int currentAnimatedStrip = 0;
+int animationSpeed = 50;
+int cycle = 0;
 bool forward = true;
 RGBColour animationColour;
 
@@ -285,24 +287,28 @@ void parseInput(String s, LinkedList<String> &variables){
 }
 
 void runAnimations(){
-  switch(animation){
-    case 0:
-      return;
-    case 1:
-      // everything is one colour and everything transitions together
-      rainbow();
-      break;
-    case 2:
-      //Has a set colour that it dims and brightens
-      breathing();
-      break;
-    case 3:
-      // random leds turn a random colour
-      rain();
-      break;
-    default:
-      return;
+  //sets the animation speed
+  if(cycle % animationSpeed == 0){
+    switch(animation){
+      case 0:
+        return;
+      case 1:
+        // everything is one colour and everything transitions together
+        rainbow();
+        break;
+      case 2:
+        //Has a set colour that it dims and brightens
+        breathing();
+        break;
+      case 3:
+        // random leds turn a random colour
+        rain();
+        break;
+      default:
+        return;
+    }
   }
+  cycle++;
 }
 
 void rainbow(){
@@ -354,7 +360,17 @@ void breathing(){
 }
 
 void rain(){
-  
+  //sets up the strip for later use
+  Adafruit_NeoPixel strip = Strips[currentAnimatedStrip-1];
+
+  //gets a random pixel
+  int randomPixel = random(strip.numPixels());
+
+  //gets a random number to set the pixel to
+  int randomHue = random(65536);
+
+  strip.setPixelColor(randomPixel, strip.gamma32(strip.ColorHSV(randomHue)));
+  strip.show();
 }
 
 int brightnessWeighted(int c, int brightness){
