@@ -26,13 +26,16 @@ Adafruit_NeoPixel Strips[MAX_STRIPS] = {
 };
 
 //Animation variables
+int lastAnimation = 0;
 int animation = 0;
 int currentStep = 0;
+int lastAnimatedStrip = 0;
 int currentAnimatedStrip = 0;
-int animationSpeed = 50;
+int animationSpeed = 20;
 int cycle = 0;
 bool forward = true;
 RGBColour animationColour;
+Adafruit_NeoPixel animatedStrip = Strips[currentAnimatedStrip];
 
 void setup() {
   Serial.begin(9600);
@@ -105,7 +108,10 @@ void loop() {
   }
 
   if(animation != 0){
-    runAnimations();
+    if(animationUpdateCheck()){
+      animatedStrip = Strips[currentAnimatedStrip-1];
+    }
+    runAnimations(animatedStrip);
   }
   
 }
@@ -137,9 +143,8 @@ void addStrip(String s){
 
 void add_ARGB_Strip(int numLEDs, int stripNum){
   int indexedStripNumber = stripNum-1;
+  if(Strips[indexedStripNumber].numPixels() == numLEDs) return;
   Strips[indexedStripNumber].updateLength(numLEDs);
-//  Serial.print("Added " + String(numLEDs));
-//  Serial.println(" to strip number: " + String(stripNum));
 }
 
 void removeStrip(String s){
@@ -152,10 +157,18 @@ void removeStrip(String s){
 }
 
 void remove_ARGB_Strip(int stripNum){
-  Adafruit_NeoPixel strip = Strips[stripNum-1];
-  strip.clear();
-  strip.show();
-  if(stripNum == currentAnimatedStrip) currentAnimatedStrip = 0;
+  if(stripNum == currentAnimatedStrip){
+    animation = 0;
+    currentAnimatedStrip = 0;
+    lastAnimatedStrip = 0;
+    lastAnimation = 0;
+    animatedStrip.clear();
+    animatedStrip.show();
+  }else{
+    Adafruit_NeoPixel strip = Strips[stripNum-1];
+    strip.clear();
+    strip.show();
+  }
 }
 
 void changeStrip(String s){
@@ -178,15 +191,21 @@ void changeStrip(String s){
     Serial.println("option number: " + String(optionNum));
     Serial.println("strip number: " + String(stripNum));
     if(!checkOptionNum(optionNum) || !checkStripNum(stripNum)) return;
+    if(stripNum == currentAnimatedStrip){
+      animation = 0;
+      currentAnimatedStrip = 0;
+      lastAnimatedStrip = 0;
+      lastAnimation = 0;
+    }
     switch(optionNum){
       case 1:
         Serial.println("whole strip");
         wholeStrip(variables, stripNum);
-        Serial.println("5");
         break;
       case 2:
         Serial.println("animation");
         animationSetup(variables, stripNum);
+        Serial.println("5");
         break;
       case 3:
         Serial.println("addressable");
@@ -203,49 +222,53 @@ void changeStrip(String s){
 
 void wholeStrip(LinkedList<String> &variables, int stripNum){
   //returns if there isn't enough variables for the colour
-  Serial.println("whole strip variables length: " + String(variables.size()));
   if(variables.size() < 3) return;
   
   //sets the colurs
   int red   = checkColour(variables.shift().toInt());
-  Serial.println("Red: " + String(red));
   int green = checkColour(variables.shift().toInt());
-  Serial.println("Green: " + String(green));
   int blue  = checkColour(variables.shift().toInt());
-  Serial.println("Blue: " + String(blue));
-  Serial.println("1");
+  
   //gets the colour in the form the strip can read
   uint32_t colour = Strips[stripNum-1].Color(red,green,blue);
-  Serial.println("2");
+  
   //sets the colour on the strip
   Strips[stripNum-1].fill(colour);
-  Serial.println("3");
   Strips[stripNum-1].show();
-  Serial.println("4");
 }
 
 void animationSetup(LinkedList<String> &variables, int stripNum){
+
+  Serial.println("Variables size: " + String(variables.size()));
 
   //if it doesn't have enough variables
   if(variables.size() < 1) return;
 
   //gets the number of the animation
   int animationNum = variables.shift().toInt();
+  Serial.println("animation number: " + String(animationNum));
 
   //if it's not a valid animation leave
   if(!checkAnimationNum(animationNum)){
     return;
   }
   else if(animationNum == 2){
+    Serial.println("animation 2");
     if(variables.size() < 3) return;
     animationColour.R = checkColour(variables.shift().toInt());
+    Serial.println("Red: " + String(animationColour.R));
     animationColour.G = checkColour(variables.shift().toInt());
+    Serial.println("Green: " + String(animationColour.G));
     animationColour.B = checkColour(variables.shift().toInt());
+    Serial.println("Blue: " + String(animationColour.B));
   }
 
-  animation = animationNum;
-  currentStep = 0;
+  //order is important
   currentAnimatedStrip = stripNum;
+  animation = animationNum;
+  Serial.println("animation: " + String(animation));
+  currentStep = 0;
+  Serial.println("Currently Animated Strip: " + String(stripNum));
 }
 
 void addressableLEDs(LinkedList<String> &variables, int stripNum){
@@ -280,8 +303,10 @@ bool checkOptionNum(int optionNum){
 
 bool checkAnimationNum(int animationNum){
   if(animationNum <= 0 || animationNum > NUM_ANIMATIONS){
+    Serial.println("false");
     return false;
   }else{
+    Serial.println("true");
     return true;
   }
 }
@@ -311,58 +336,68 @@ void parseInput(String s, LinkedList<String> &variables){
   }
 }
 
-void runAnimations(){
+void runAnimations(Adafruit_NeoPixel &strip){
   //sets the animation speed
   if(cycle % animationSpeed == 0){
+    
+    Serial.println("Running Animation: " + String(animation));
     switch(animation){
       case 0:
         return;
       case 1:
         // everything is one colour and everything transitions together
-        rainbow();
+        Serial.println("going into rainbow");
+        rainbow(strip);
+        Serial.println("exited rainbow");
         break;
       case 2:
         //Has a set colour that it dims and brightens
-        breathing();
+        breathing(strip);
         break;
       case 3:
         // random leds turn a random colour
-        rain();
+        rain(strip);
         break;
       default:
         return;
     }
+    Serial.println("exited switch statement");
   }
+//  Serial.println("exited if statement");
   cycle++;
+//  Serial.println("end of function");
 }
 
-void rainbow(){
-  
-  //get the current strip
-  Adafruit_NeoPixel strip = Strips[currentAnimatedStrip-1];
+void rainbow(Adafruit_NeoPixel &strip){
 
+  Serial.println("In rainbow");
+  //get the current strip
+  Serial.println("currentlyAnimted Strip: " + String(currentAnimatedStrip-1));
+  Serial.println("Current step: " + String(currentStep));
   //uses gamma correction and gets the right colour
   uint32_t rgbcolor = strip.gamma32(strip.ColorHSV(currentStep));
+
+  Serial.println("RGB colour: " + String(rgbcolor));
 
   //fills the strip with the colour and shows
   strip.fill(rgbcolor);
   strip.show();
-  
+
   //check if the if the current step is the max
   if(currentStep == 65536){
     currentStep == 0;
   }else{
     currentStep += 256;
   }
+  Serial.println("Current step: " + String(currentStep));
 }
 
-void breathing(){
+void breathing(Adafruit_NeoPixel &strip){
   if(currentStep == 255 || currentStep == 0){
     forward = !forward;
   }
   
   //sets the pixel strip
-  Adafruit_NeoPixel strip = Strips[currentAnimatedStrip-1];
 
   //gets the weighted colours
   int rAdjusted = brightnessWeighted(animationColour.R, currentStep);
@@ -384,9 +419,8 @@ void breathing(){
   }
 }
 
-void rain(){
+void rain(Adafruit_NeoPixel &strip){
   //sets up the strip for later use
-  Adafruit_NeoPixel strip = Strips[currentAnimatedStrip-1];
 
   //gets a random pixel
   int randomPixel = random(strip.numPixels());
@@ -402,4 +436,15 @@ void rain(){
 
 int brightnessWeighted(int c, int brightness){
   return (brightness*c/255);
+}
+
+bool animationUpdateCheck(){
+  //checks to see if animation changed
+  if(lastAnimation == animation && lastAnimatedStrip == currentAnimatedStrip){
+    //animation didn't change
+    return false;
+  }else{
+    //animation did change
+    return true;
+  }
 }
