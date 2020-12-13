@@ -1,6 +1,7 @@
 #include <LinkedList.h>
 #include <BluetoothSerial.h>
 #include <Adafruit_NeoPixel.h>
+#include <WiFi.h>
 #define MAX_STRIPS 3
 #define MAX_OPTIONS 3
 #define NUM_ANIMATIONS 3
@@ -58,6 +59,16 @@ void handleCommand(String s) {
   // second input is what string number
   // have a boolean array with max number of strips
   // not the boolean and then give that input for the digital write
+  if(s.indexOf("Wifi:")==0){
+      printString("Wifi");
+      WiFi.begin("", "");
+      while(WiFi.status() != WL_CONNECTED) {
+        delay(100);
+        printString("connecting");
+
+      }
+      printString("connected");
+  }
   if(s == "LightsON"){
     // Turn Lights on
     digitalWrite(relay, LOW);
